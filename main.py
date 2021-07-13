@@ -6,7 +6,6 @@ from telegram.ext import Updater
 from telegram.ext import CommandHandler
 from telegram.ext import MessageHandler, Filters
 import os
-from datetime import date
 import zalgo_text
 
 # TODO
@@ -16,6 +15,7 @@ import zalgo_text
 
 # GLOBALS
 gZalgoMode = [False, None]  # [Is Zalgo Mode, UserID]
+gShutTheFuckingFuckUp = False
 configFileName = "configuration.txt"
 
 
@@ -35,7 +35,8 @@ def main():
     dispatcher = updater.dispatcher
     handlers = [MessageHandler(Filters.text & (~Filters.command), messageHandler),
                 CommandHandler('start', start),
-                CommandHandler('scary', setZalgo)]
+                CommandHandler('scary', setZalgo),
+                CommandHandler('shut', shut)]
     # Add each handler
     for i in range(len(handlers)):
         dispatcher.add_handler(handlers[i])
@@ -64,14 +65,19 @@ def messageHandler(update, context):
     userID = str(update.effective_chat.id)  # update.effective_chat.id is the chat id
     textMessage = update.message.text  # update.message.text is the message that user sent
     # Handles the general messages
-    Response = textMessage
-    if "big" in textMessage:
-        Response = "Hah, that's what she said"
-    elif "gay" in textMessage:
-        Response = "Your mother is gay"
+    if not gShutTheFuckingFuckUp:
+        Response = textMessage
+        if "big" in textMessage:
+            Response = "Hah, that's what she said"
+        elif "gay" in textMessage:
+            Response = "Your mother is gay"
+        elif "wet" in textMessage:
+            Response = "Your mother was wet"
+        elif "sticky" in textMessage:
+            Response = "I can make your mother sticky"
 
-    sendMessage(context, userID, Response)
-    print("User: {0}\nResponse: {1}\n".format(textMessage, Response))
+        sendMessage(context, userID, Response)
+        print("User: {0}\nResponse: {1}\n".format(textMessage, Response))
 
 
 def setZalgo(update, context):
@@ -83,6 +89,19 @@ def setZalgo(update, context):
     else:
         response = "Scary mode disabled"
     sendMessage(context, userID, response)
+
+
+def shut(update, context):
+    global gShutTheFuckingFuckUp
+    userID = str(update.effective_chat.id)
+    gShutTheFuckingFuckUp = not gShutTheFuckingFuckUp
+
+    if gShutTheFuckingFuckUp:
+        Response = "Okay mom"
+    else:
+        Response = "I believe in freedom of speech"
+    sendMessage(context, userID, Response)
+
 
 
 # Main
