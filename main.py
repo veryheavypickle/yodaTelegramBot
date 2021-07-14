@@ -128,18 +128,18 @@ def addResponse(context, update):
     commandArgs = update.args
     if len(commandArgs) >= 2:
         df = openPickle(responsesFileName)
-        print(df)
         newString = commandArgs.pop(0)
         newResponse = ""
         for i in range(len(commandArgs)):
             newResponse += " " + commandArgs[i]
-        print("\nNew String: {0}\nNew Response: {1}\n".format(newString, newResponse))
 
         df = df.append({gResponseColumns[0]: newString,
                        gResponseColumns[1]: newResponse},
                        ignore_index=True)
         savePickle(df, responsesFileName)
-        print(openPickle(responsesFileName))
+        print("")
+        print(df)
+        print("")
 
 
 # Main
