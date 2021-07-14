@@ -17,7 +17,7 @@ import pandas as pd
 
 # GLOBALS
 gZalgoMode = [False, None]  # [Is Zalgo Mode, UserID]
-gShutTheFuckingFuckUp = False
+gShutTheFuckingFuckUp = True
 gResponseColumns = ["Detect String", "Response"]
 configFileName = "configuration.txt"
 responsesFileName = "responses.p"
