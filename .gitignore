@@ -2,6 +2,7 @@
 configuration.txt
 .idea
 .DS_Store
+responses.p
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

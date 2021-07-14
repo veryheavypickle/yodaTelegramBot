@@ -7,6 +7,7 @@ from telegram.ext import CommandHandler
 from telegram.ext import MessageHandler, Filters
 import os
 import zalgo_text
+import pandas as pd
 
 # TODO
 # Add /help to list the commands
@@ -16,7 +17,9 @@ import zalgo_text
 # GLOBALS
 gZalgoMode = [False, None]  # [Is Zalgo Mode, UserID]
 gShutTheFuckingFuckUp = False
+gResponseColumns = ["Detect String", "Response"]
 configFileName = "configuration.txt"
+responsesFileName = "responses.p"
 
 
 def setup():
@@ -27,6 +30,16 @@ def setup():
         configFile.write("Optionally_replace_me_with_UserID_of_the_developer")
         configFile.close()
         print("done!\n")
+    if not os.path.isfile(responsesFileName):
+        print("creating responses file...")
+        # add default responses
+        data = [["sticky", "I can make your mother sticky"],
+                ["wet", "Your mother was wet"],
+                ["gay", "Your mother is gay"],
+                ["big", "Hah, that's what she said"]]
+        df = pd.DataFrame(data=data, columns=gResponseColumns)
+        df.to_pickle(responsesFileName)
+        print("done!\n")
 
 
 def main():
@@ -36,12 +49,21 @@ def main():
     handlers = [MessageHandler(Filters.text & (~Filters.command), messageHandler),
                 CommandHandler('start', start),
                 CommandHandler('scary', setZalgo),
-                CommandHandler('shut', shut)]
+                CommandHandler('shut', shut),
+                CommandHandler('addresponse', addResponse)]
     # Add each handler
     for i in range(len(handlers)):
         dispatcher.add_handler(handlers[i])
     updater.start_polling()
     print("started")
+
+
+def openPickle(fileName):
+    return pd.read_pickle(fileName)
+
+
+def savePickle(df, fileName):
+    pd.to_pickle(df, filepath_or_buffer=fileName)
 
 
 def sendMessage(context, userID, message):
@@ -65,17 +87,15 @@ def messageHandler(update, context):
     userID = str(update.effective_chat.id)  # update.effective_chat.id is the chat id
     textMessage = update.message.text  # update.message.text is the message that user sent
     # Handles the general messages
-    if not gShutTheFuckingFuckUp:
-        Response = textMessage
-        if "big" in textMessage:
-            Response = "Hah, that's what she said"
-        elif "gay" in textMessage:
-            Response = "Your mother is gay"
-        elif "wet" in textMessage:
-            Response = "Your mother was wet"
-        elif "sticky" in textMessage:
-            Response = "I can make your mother sticky"
+    df = openPickle(responsesFileName)  # open responses
+    detectStrings = df[gResponseColumns[0]].tolist()
+    responses = df[gResponseColumns[1]].tolist()
+    Response = textMessage
+    for i in range(len(detectStrings)):
+        if detectStrings[i] in textMessage:  # if the detected string is in the text message
+            Response = responses[i]
 
+    if not gShutTheFuckingFuckUp or Response is not textMessage:
         sendMessage(context, userID, Response)
         print("User: {0}\nResponse: {1}\n".format(textMessage, Response))
 
@@ -103,6 +123,24 @@ def shut(update, context):
     sendMessage(context, userID, Response)
 
 
+def addResponse(context, update):
+    # userID = str(update.effective_chat.id)
+    commandArgs = update.args
+    if len(commandArgs) >= 2:
+        df = openPickle(responsesFileName)
+        print(df)
+        newString = commandArgs.pop(0)
+        newResponse = ""
+        for i in range(len(commandArgs)):
+            newResponse += " " + commandArgs[i]
+        print("\nNew String: {0}\nNew Response: {1}\n".format(newString, newResponse))
+
+        df = df.append({gResponseColumns[0]: newString,
+                       gResponseColumns[1]: newResponse},
+                       ignore_index=True)
+        savePickle(df, responsesFileName)
+        print(openPickle(responsesFileName))
+
 
 # Main
 setup()
@@ -111,4 +149,5 @@ token = str(config[0]).replace("\n", "")
 admin = str(config[1]).replace("\n", "")
 if __name__ == '__main__':
     main()
+    #
 
