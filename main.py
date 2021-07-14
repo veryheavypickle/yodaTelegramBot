@@ -9,6 +9,8 @@ from telegram.ext import MessageHandler, Filters
 import os
 import zalgo_text
 import pandas as pd
+import shelve
+
 
 # TODO
 # Add /help to list the commands
@@ -20,7 +22,7 @@ gZalgoMode = [False, None]  # [Is Zalgo Mode, UserID]
 gShutTheFuckingFuckUp = True
 gResponseColumns = ["Detect String", "Response"]
 configFileName = "configuration.txt"
-responsesFileName = "responses.p"
+responsesFileName = "responses"
 
 
 def setup():
@@ -34,12 +36,12 @@ def setup():
     if not os.path.isfile(responsesFileName):
         print("creating responses file...")
         # add default responses
-        data = [["sticky", "I can make your mother sticky"],
-                ["wet", "Your mother was wet"],
-                ["gay", "Your mother is gay"],
-                ["big", "Hah, that's what she said"]]
-        df = pd.DataFrame(data=data, columns=gResponseColumns)
-        df.to_pickle(responsesFileName)
+        s = shelve.open(responsesFileName)
+        s['sticky']='i can make your mother sticky'
+        s['wet']='Your mother was wet'
+        s['gay']="Your mother is gay"
+        s['big']= "Hah, that's what she said"
+        s.close()
         print("done!\n")
 
 
@@ -51,7 +53,9 @@ def main():
                 CommandHandler('start', start),
                 CommandHandler('scary', setZalgo),
                 CommandHandler('shut', shut),
-                CommandHandler('addresponse', addResponse)]
+                CommandHandler('addresponse', addResponse),
+                CommandHandler('deleteresponse', deleteResponse)]
+
     # Add each handler
     for i in range(len(handlers)):
         dispatcher.add_handler(handlers[i])
@@ -102,13 +106,16 @@ def messageHandler(update, context):
     userID = str(update.effective_chat.id)  # update.effective_chat.id is the chat id
     textMessage = update.message.text  # update.message.text is the message that user sent
     # Handles the general messages
-    df = openPickle(responsesFileName)  # open responses
-    detectStrings = df[gResponseColumns[0]].tolist()
-    responses = df[gResponseColumns[1]].tolist()
+    # df = openPickle(responsesFileName)  # open responses
+    # detectStrings = df[gResponseColumns[0]].tolist()
+    # responses = df[gResponseColumns[1]].tolist()
     Response = textMessage
-    for i in range(len(detectStrings)):
-        if detectStrings[i].lower() in textMessage.lower():  # if the detected string is in the text message
-            Response = responses[i]
+    s = shelve.open(responsesFileName)
+    messageToList = textMessage.lower().split()
+    for word in messageToList:
+        if s.__contains__(word):  # if the detected string is in the text message
+            Response = s[word]
+    s.close()
 
     if not gShutTheFuckingFuckUp or Response is not textMessage:
         limit = 2000  # limit of chars for a message
@@ -145,20 +152,24 @@ def addResponse(context, update):
     # userID = str(update.effective_chat.id)
     commandArgs = update.args
     if len(commandArgs) >= 2:
-        df = openPickle(responsesFileName)
+        s = shelve.open(responsesFileName)
         newString = commandArgs.pop(0)
         newResponse = ""
         if len(newString) >= 3:
             for i in range(len(commandArgs)):
                 newResponse += " " + commandArgs[i]
+            s[newString]=newResponse
+            s.close()
 
-            df = df.append({gResponseColumns[0]: newString,
-                           gResponseColumns[1]: newResponse},
-                           ignore_index=True)
-            savePickle(df, responsesFileName)
-            print("")
-            print(df)
-            print("")
+def deleteResponse(context, update):
+    commandArgs = update.args
+    if len(commandArgs) == 1:
+        s = shelve.open(responsesFileName)
+        newString = commandArgs.pop(0)
+        if not s.__contains__(newString):
+            return
+        del s[newString]
+        s.close()
 
 
 # Main
