@@ -83,7 +83,8 @@ def sendMessage(context, userID, message):
         context.bot.send_message(chat_id=userID,
                                  text=message,
                                  parse_mode=telegram.ParseMode.MARKDOWN_V2)
-    except:
+    except Exception as e:
+        print(e)
         # Basically, sometimes special characters aren't accepted
         # So change the formatting and try again
         context.bot.send_message(chat_id=userID,
