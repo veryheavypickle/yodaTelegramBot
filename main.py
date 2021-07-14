@@ -92,7 +92,7 @@ def messageHandler(update, context):
     responses = df[gResponseColumns[1]].tolist()
     Response = textMessage
     for i in range(len(detectStrings)):
-        if detectStrings[i] in textMessage:  # if the detected string is in the text message
+        if detectStrings[i].lower() in textMessage.lower():  # if the detected string is in the text message
             Response = responses[i]
 
     if not gShutTheFuckingFuckUp or Response is not textMessage:
