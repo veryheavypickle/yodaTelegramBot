@@ -1,4 +1,5 @@
 # https://github.com/python-telegram-bot/python-telegram-bot/wiki/Extensions-%E2%80%93-Your-first-Bot
+import time
 
 import telegram
 import zalgo_text.zalgo
@@ -58,6 +59,12 @@ def main():
     print("started")
 
 
+def splitStringIntoChunks(string, limit):
+    # Where string is the long string and limit is how many chars
+    chunks = [string[i:i + limit] for i in range(0, len(string), limit)]
+    return chunks
+
+
 def openPickle(fileName):
     return pd.read_pickle(fileName)
 
@@ -72,9 +79,16 @@ def sendMessage(context, userID, message):
         message = zalgo_text.zalgo.zalgo().zalgofy(message)
     else:
         message = message.replace(".", "")
-    context.bot.send_message(chat_id=userID,
-                             text=message,
-                             parse_mode=telegram.ParseMode.MARKDOWN_V2)
+    try:
+        context.bot.send_message(chat_id=userID,
+                                 text=message,
+                                 parse_mode=telegram.ParseMode.MARKDOWN_V2)
+    except:
+        # Basically, sometimes special characters aren't accepted
+        # So change the formatting and try again
+        context.bot.send_message(chat_id=userID,
+                                 text=message,
+                                 parse_mode=telegram.ParseMode.HTML)
 
 
 # Telegram command/message handlers
@@ -96,8 +110,11 @@ def messageHandler(update, context):
             Response = responses[i]
 
     if not gShutTheFuckingFuckUp or Response is not textMessage:
-        sendMessage(context, userID, Response)
-        print("User: {0}\nResponse: {1}\n".format(textMessage, Response))
+        limit = 2000  # limit of chars for a message
+        messageParts = splitStringIntoChunks(Response, limit)
+        for i in range(len(messageParts)):
+            sendMessage(context, userID, messageParts[i])
+            time.sleep(0.5)  # so as to not overload it
 
 
 def setZalgo(update, context):
@@ -149,5 +166,5 @@ token = str(config[0]).replace("\n", "")
 admin = str(config[1]).replace("\n", "")
 if __name__ == '__main__':
     main()
-    #
+
 
