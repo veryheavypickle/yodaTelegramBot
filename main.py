@@ -67,7 +67,7 @@ def savePickle(df, fileName):
 
 
 def sendMessage(context, userID, message):
-    message = message.replace(".", "").replace("!", "")  # remove all '.' and '!'
+    message = message.replace(".", "").replace("!", "").replace("-", "")  # remove all '.' and '!'
     if gZalgoMode[0] and gZalgoMode[1] == userID:
         message = zalgo_text.zalgo.zalgo().zalgofy(message)
     else:
