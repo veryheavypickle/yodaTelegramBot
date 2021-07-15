@@ -52,7 +52,8 @@ def main():
                 CommandHandler('scary', setZalgo),
                 CommandHandler('shut', shut),
                 CommandHandler('addresponse', addResponse),
-                CommandHandler('deleteresponse', deleteResponse)]
+                CommandHandler('deleteresponse', deleteResponse),
+                CommandHandler('showresponses', showResponses)]
 
     # Add each handler
     for i in range(len(handlers)):
@@ -149,8 +150,8 @@ def shut(update, context):
     sendMessage(context, userID, Response)
 
 
-def addResponse(context, update):
-    # userID = str(update.effective_chat.id)
+def addResponse(update, context):
+    userID = str(update.effective_chat.id)
     commandArgs = update.args
     if len(commandArgs) >= 2:
         # s = shelve.open(responsesFileName)
@@ -165,9 +166,11 @@ def addResponse(context, update):
                            ignore_index=True)
             savePickle(df, responsesFileName)
             print(df)
+            sendMessage(context, userID, "New trigger word added for {}".format(newString))
 
 
 def deleteResponse(context, update):
+    userID = str(update.effective_chat.id)
     commandArgs = update.args
     if len(commandArgs) == 1:
         # s = shelve.open(responsesFileName)
@@ -179,6 +182,13 @@ def deleteResponse(context, update):
                 df = df.drop([i])
                 break
         savePickle(df, responsesFileName)
+        sendMessage(context, userID, "Trigger word for {0} has been removed".format(newString))
+
+
+def showResponses(update, context):
+    userID = str(update.effective_chat.id)
+    df = str(openPickle(responsesFileName))
+    sendMessage(context, userID, df)
 
 
 # Main
