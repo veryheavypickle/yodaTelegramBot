@@ -179,7 +179,7 @@ def deleteResponse(context, update):
         triggeringStrings = df[gResponseColumns[0]].tolist()
         for i in range(len(triggeringStrings)):
             if newString == triggeringStrings[i]:
-                df = df.drop([i])
+                df = (df.drop([i])).reset_index()
                 break
         savePickle(df, responsesFileName)
         sendMessage(context, userID, "Trigger word for {0} has been removed".format(newString))
