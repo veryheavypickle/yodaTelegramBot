@@ -152,7 +152,7 @@ def shut(update, context):
 
 def addResponse(update, context):
     userID = str(update.effective_chat.id)
-    commandArgs = update.args
+    commandArgs = context.args
     if len(commandArgs) >= 2:
         # s = shelve.open(responsesFileName)
         df = openPickle(responsesFileName)
@@ -171,7 +171,7 @@ def addResponse(update, context):
 
 def deleteResponse(context, update):
     userID = str(update.effective_chat.id)
-    commandArgs = update.args
+    commandArgs = context.args
     if len(commandArgs) == 1:
         # s = shelve.open(responsesFileName)
         df = openPickle(responsesFileName)
@@ -187,8 +187,13 @@ def deleteResponse(context, update):
 
 def showResponses(update, context):
     userID = str(update.effective_chat.id)
-    df = str(openPickle(responsesFileName))
-    sendMessage(context, userID, df)
+    df = openPickle(responsesFileName)
+    triggeringWords = df[gResponseColumns[0]].tolist()
+    responses = df[gResponseColumns[1]].tolist()
+    for i in range(len(triggeringWords)):
+        message = "{0}: {1}".format(triggeringWords[i], responses[i])
+        sendMessage(context, userID, message)
+        time.sleep(0.5)
 
 
 # Main
