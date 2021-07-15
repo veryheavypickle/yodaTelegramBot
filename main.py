@@ -169,7 +169,7 @@ def addResponse(update, context):
             sendMessage(context, userID, "New trigger word added for {}".format(newString))
 
 
-def deleteResponse(context, update):
+def deleteResponse(update, context):
     userID = str(update.effective_chat.id)
     commandArgs = context.args
     if len(commandArgs) == 1:
