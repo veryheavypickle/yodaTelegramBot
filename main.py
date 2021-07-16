@@ -77,22 +77,17 @@ def savePickle(df, fileName):
 
 
 def sendMessage(context, userID, message):
-    message = message.replace(".", "").replace("!", "").replace("-", "")  # remove all '.' and '!'
+    forbiddenChars = [".", "!", "-"]
     if gZalgoMode[0] and gZalgoMode[1] == userID:
         message = zalgo_text.zalgo.zalgo().zalgofy(message)
-    else:
-        message = message.replace(".", "")
-    try:
-        context.bot.send_message(chat_id=userID,
-                                 text=message,
-                                 parse_mode=telegram.ParseMode.MARKDOWN_V2)
-    except Exception as e:
-        print(e)
-        # Basically, sometimes special characters aren't accepted
-        # So change the formatting and try again
+    if any(forbiddenChars) in message:
         context.bot.send_message(chat_id=userID,
                                  text=message,
                                  parse_mode=telegram.ParseMode.HTML)
+    else:
+        context.bot.send_message(chat_id=userID,
+                                 text=message,
+                                 parse_mode=telegram.ParseMode.MARKDOWN_V2)
 
 
 # Telegram command/message handlers
