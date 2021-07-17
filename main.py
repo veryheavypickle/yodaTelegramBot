@@ -1,5 +1,4 @@
 # https://github.com/python-telegram-bot/python-telegram-bot/wiki/Extensions-%E2%80%93-Your-first-Bot
-import time
 import telegram
 import zalgo_text.zalgo
 from telegram.ext import Updater
@@ -16,8 +15,7 @@ import pandas as pd
 # edit README
 
 # GLOBALS
-gZalgoMode = [False, None]  # [Is Zalgo Mode, UserID]
-gShutTheFuckingFuckUp = True
+gZalgoMode = False
 gResponseColumns = ["Detect String", "Response"]
 configFileName = "configuration.txt"
 responsesFileName = "responses.p"
@@ -50,14 +48,13 @@ def main():
     handlers = [MessageHandler(Filters.text & (~Filters.command), messageHandler),
                 CommandHandler('start', start),
                 CommandHandler('scary', setZalgo),
-                CommandHandler('shut', shut),
                 CommandHandler('addresponse', addResponse),
                 CommandHandler('deleteresponse', deleteResponse),
                 CommandHandler('showresponses', showResponses)]
 
     # Add each handler
-    for i in range(len(handlers)):
-        dispatcher.add_handler(handlers[i])
+    for handler in handlers:
+        dispatcher.add_handler(handler)
     updater.start_polling()
     print("started")
 
@@ -77,8 +74,16 @@ def savePickle(df, fileName):
 
 
 def sendMessage(context, userID, message):
+    limit = 2000  # limit of chars for a message
+    messageParts = splitStringIntoChunks(message, limit)
+    if messageParts is not "":
+        for messagePart in messageParts:
+            sendMessage(context, userID, messagePart)
+
+
+def actuallySendMessage(context, userID, message):
     forbiddenChars = [".", "!", "-"]
-    if gZalgoMode[0] and gZalgoMode[1] == userID:
+    if gZalgoMode:
         message = zalgo_text.zalgo.zalgo().zalgofy(message)
     if any(forbiddenChars) in message:
         context.bot.send_message(chat_id=userID,
@@ -99,50 +104,31 @@ def start(update, context):
 def messageHandler(update, context):
     userID = str(update.effective_chat.id)  # update.effective_chat.id is the chat id
     textMessage = update.message.text  # update.message.text is the message that user sent
+
     # Handles the general messages
     df = openPickle(responsesFileName)  # open responses
-    detectStrings = df[gResponseColumns[0]].tolist()
+    triggerStrings = df[gResponseColumns[0]].tolist()
     responses = df[gResponseColumns[1]].tolist()
-    Response = textMessage
-    for i in range(len(detectStrings)):
-        if detectStrings[i].lower() in textMessage.lower():  # if the detected string is in the text message
-            Response = responses[i]
-    # s = shelve.open(responsesFileName)
-    # messageToList = textMessage.lower().split()
-    # for word in messageToList:
-    #    if s.__contains__(word):  # if the detected string is in the text message
-    #        Response = s[word]
-    # s.close()
 
-    if not gShutTheFuckingFuckUp or Response is not textMessage:
-        limit = 2000  # limit of chars for a message
-        messageParts = splitStringIntoChunks(Response, limit)
-        for i in range(len(messageParts)):
-            sendMessage(context, userID, messageParts[i])
-            time.sleep(0.5)  # so as to not overload it
+    Response = textMessage
+    for triggerString in triggerStrings:
+        if triggerString.lower() in textMessage.lower():  # if the detected string is in the text message
+            index = triggerStrings(triggerString)
+            Response = responses[index]
+
+    if Response is not textMessage:
+        sendMessage(context, userID, Response)
 
 
 def setZalgo(update, context):
     global gZalgoMode
     userID = str(update.effective_chat.id)
-    gZalgoMode = [(not gZalgoMode[0]), userID]
-    if gZalgoMode[0]:
+    gZalgoMode = not gZalgoMode
+    if gZalgoMode:
         response = "Scary mode enabled"
     else:
         response = "Scary mode disabled"
     sendMessage(context, userID, response)
-
-
-def shut(update, context):
-    global gShutTheFuckingFuckUp
-    userID = str(update.effective_chat.id)
-    gShutTheFuckingFuckUp = not gShutTheFuckingFuckUp
-
-    if gShutTheFuckingFuckUp:
-        Response = "Okay mom"
-    else:
-        Response = "I believe in freedom of speech"
-    sendMessage(context, userID, Response)
 
 
 def addResponse(update, context):
@@ -154,8 +140,8 @@ def addResponse(update, context):
         newString = commandArgs.pop(0)
         newResponse = ""
         if len(newString) >= 3:
-            for i in range(len(commandArgs)):
-                newResponse += " " + commandArgs[i]
+            for arg in commandArgs:
+                newResponse += " " + arg
             df = df.append({gResponseColumns[0]: newString,
                             gResponseColumns[1]: newResponse},
                            ignore_index=True)
@@ -172,9 +158,10 @@ def deleteResponse(update, context):
         df = openPickle(responsesFileName)
         newString = commandArgs.pop(0)
         triggeringStrings = df[gResponseColumns[0]].tolist()
-        for i in range(len(triggeringStrings)):
-            if newString == triggeringStrings[i]:
-                df = (df.drop([i])).reset_index()
+        for trigger in triggeringStrings:
+            if newString == trigger:
+                index = triggeringStrings.index(trigger)
+                df = (df.drop([index])).reset_index()
                 break
         savePickle(df, responsesFileName)
         sendMessage(context, userID, "Trigger word for {0} has been removed".format(newString))
@@ -184,11 +171,10 @@ def showResponses(update, context):
     userID = str(update.effective_chat.id)
     df = openPickle(responsesFileName)
     triggeringWords = df[gResponseColumns[0]].tolist()
-    responses = df[gResponseColumns[1]].tolist()
-    for i in range(len(triggeringWords)):
-        message = "{0}: {1}".format(triggeringWords[i], responses[i])
-        sendMessage(context, userID, message)
-        time.sleep(0.5)
+    message = ":( Words that trigger me :(\n"
+    for trigger in triggeringWords:
+        message += trigger + "\n"
+    sendMessage(context, userID, message)
 
 
 # Main
