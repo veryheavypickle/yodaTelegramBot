@@ -78,10 +78,11 @@ def sendMessage(context, userID, message):
     messageParts = splitStringIntoChunks(message, limit)
     if messageParts is not "":
         for messagePart in messageParts:
-            sendMessage(context, userID, messagePart)
+            actuallySendMessage(context, userID, messagePart)
 
 
 def actuallySendMessage(context, userID, message):
+    # should only be called by sendMessage
     forbiddenChars = [".", "!", "-"]
     if gZalgoMode:
         message = zalgo_text.zalgo.zalgo().zalgofy(message)
