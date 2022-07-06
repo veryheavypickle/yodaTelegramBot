@@ -93,7 +93,8 @@ def actuallySendMessage(context, userID, message):
     else:
         context.bot.send_message(chat_id=userID,
                                  text=message,
-                                 parse_mode=telegram.ParseMode.MARKDOWN_V2)
+                                 parse_mode=telegram.ParseMode.MARKDOWN_V2,
+                                 )
 
 
 # Telegram command/message handlers
